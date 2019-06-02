@@ -47,6 +47,7 @@
 # include <limits.h>
 # include <sys/time.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 /*-----------------------------------------------------------------------
  * INSTRUCTIONS:
@@ -183,16 +184,22 @@ static char	*label[4] = {"Copy:      ", "Scale:     ",
 
 
 extern double mysecond();
-extern void checkSTREAMresults(const STREAM_TYPE*, const STREAM_TYPE*, const STREAM_TYPE*, size_t STREAM_ARRAY_SIZE);
+extern void checkSTREAMresults();
 #ifdef TUNED
-extern void tuned_STREAM_Copy(size_t);
-extern void tuned_STREAM_Scale(STREAM_TYPE scalar, size_t);
-extern void tuned_STREAM_Add(size_t);
-extern void tuned_STREAM_Triad(STREAM_TYPE scalar, size_t);
+extern void tuned_STREAM_Copy();
+extern void tuned_STREAM_Scale(STREAM_TYPE scalar);
+extern void tuned_STREAM_Add();
+extern void tuned_STREAM_Triad(STREAM_TYPE scalar);
 #endif
 #ifdef _OPENMP
 extern int omp_get_num_threads();
 #endif
+
+// GLOBALS
+    STREAM_TYPE * a;
+    STREAM_TYPE * b;
+    STREAM_TYPE * c;
+    double STREAM_ARRAY_SIZE;
 int
 main()
     {
@@ -207,9 +214,9 @@ main()
     
      
 
-    STREAM_TYPE * a = (STREAM_TYPE *)malloc( (STREAM_ARRAY_SIZE+OFFSET) * sizeof(STREAM_TYPE) ); 
-    STREAM_TYPE * b = (STREAM_TYPE *)malloc( (STREAM_ARRAY_SIZE+OFFSET) * sizeof(STREAM_TYPE) ); 
-    STREAM_TYPE * c = (STREAM_TYPE *)malloc( (STREAM_ARRAY_SIZE+OFFSET) * sizeof(STREAM_TYPE) ); 
+    a = (STREAM_TYPE *)malloc( (STREAM_ARRAY_SIZE+OFFSET) * sizeof(STREAM_TYPE) ); 
+    b = (STREAM_TYPE *)malloc( (STREAM_ARRAY_SIZE+OFFSET) * sizeof(STREAM_TYPE) ); 
+    c = (STREAM_TYPE *)malloc( (STREAM_ARRAY_SIZE+OFFSET) * sizeof(STREAM_TYPE) ); 
     int			quantum, checktick();
     int			BytesPerWord;
     int			k;
@@ -375,7 +382,7 @@ main()
     printf(HLINE);
 
     /* --- Check Results --- */
-    checkSTREAMresults(a,b,c, STREAM_ARRAY_SIZE);
+    checkSTREAMresults();
     printf(HLINE);
 
     free(a);
@@ -438,7 +445,7 @@ double mysecond()
 #ifndef abs
 #define abs(a) ((a) >= 0 ? (a) : -(a))
 #endif
-void checkSTREAMresults (const STREAM_TYPE* a, const STREAM_TYPE* b, const STREAM_TYPE *c, size_t STREAM_ARRAY_SIZE)
+void checkSTREAMresults ()
 {
 	STREAM_TYPE aj,bj,cj,scalar;
 	STREAM_TYPE aSumErr,bSumErr,cSumErr;
@@ -558,7 +565,7 @@ void checkSTREAMresults (const STREAM_TYPE* a, const STREAM_TYPE* b, const STREA
 
 #ifdef TUNED
 /* stubs for "tuned" versions of the kernels */
-void tuned_STREAM_Copy(size_t STREAM_ARRAY_SIZE)
+void tuned_STREAM_Copy()
 {
 	ssize_t j;
 #pragma omp parallel for
@@ -566,7 +573,7 @@ void tuned_STREAM_Copy(size_t STREAM_ARRAY_SIZE)
             c[j] = a[j];
 }
 
-void tuned_STREAM_Scale(STREAM_TYPE scalar, size_t STREAM_ARRAY_SIZE)
+void tuned_STREAM_Scale(STREAM_TYPE scalar)
 {
 	ssize_t j;
 #pragma omp parallel for
@@ -574,7 +581,7 @@ void tuned_STREAM_Scale(STREAM_TYPE scalar, size_t STREAM_ARRAY_SIZE)
 	    b[j] = scalar*c[j];
 }
 
-void tuned_STREAM_Add(size_t STREAM_ARRAY_SIZE)
+void tuned_STREAM_Add()
 {
 	ssize_t j;
 #pragma omp parallel for
@@ -582,7 +589,7 @@ void tuned_STREAM_Add(size_t STREAM_ARRAY_SIZE)
 	    c[j] = a[j]+b[j];
 }
 
-void tuned_STREAM_Triad(STREAM_TYPE scalar, size_t STREAM_ARRAY_SIZE)
+void tuned_STREAM_Triad(STREAM_TYPE scalar)
 {
 	ssize_t j;
 #pragma omp parallel for
